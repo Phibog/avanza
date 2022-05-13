@@ -18,7 +18,7 @@ MAX_INACTIVE_MINUTES = 60 * 24
 
 
 class Avanza:
-    def __init__(self, credentials: dict):
+    def __init__(self, credentials: dict, existing_session: Optional[Dict[str, str]] = None):
         """
         Args:
             credentials: Login credentials.
@@ -38,12 +38,20 @@ class Avanza:
         self._authenticationTimeout = MAX_INACTIVE_MINUTES
         self._session = requests.Session()
 
-        response_body, credentials = self.__authenticate(credentials)
+    
+        if existing_session is None:
+            response_body, credentials = self.__authenticate(credentials)
+            self._authentication_session = response_body['authenticationSession']
+            self._push_subscription_id = response_body['pushSubscriptionId']
+            self._customer_id = response_body['customerId']
 
+        else:
+            self._authentication_session = existing_session['authenticationSession']
+            self._push_subscription_id = existing_session['pushSubscriptionId']
+            self._customer_id = existing_session['customerId']
+            self._security_token = existing_session['secToken']
+        
         self._credentials = credentials
-        self._authentication_session = response_body['authenticationSession']
-        self._push_subscription_id = response_body['pushSubscriptionId']
-        self._customer_id = response_body['customerId']
 
         self._socket = AvanzaSocket(
             self._push_subscription_id,
